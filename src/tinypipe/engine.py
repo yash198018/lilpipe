@@ -24,13 +24,8 @@ class Pipeline:
 
         for step in self.steps:
             ctx = step.run(ctx)
-            if ctx.signal in (
-                PipelineSignal.ABORT_PIPELINE,
-                PipelineSignal.SKIP_REST_OF_PASS,
-                PipelineSignal.START_ANOTHER_PASS,
-            ):
+            if ctx.signal in (PipelineSignal.ABORT_PIPELINE, PipelineSignal.ABORT_PASS):
                 break
-
         return ctx
 
     def run(self, ctx: PipelineContext) -> PipelineContext:
@@ -43,7 +38,7 @@ class Pipeline:
                 log.info("🛑  %s aborted after %d pass(es)", self.name, pass_idx)
                 break
 
-            if ctx.signal is PipelineSignal.START_ANOTHER_PASS:
+            if ctx.signal is PipelineSignal.ABORT_PASS:
                 if pass_idx >= self.max_passes:
                     raise RuntimeError(
                         f"{self.name}: exceeded {self.max_passes} passes"

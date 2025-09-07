@@ -1,19 +1,23 @@
 import pytest
 import logging
 from tinypipe.engine import Pipeline
-from tinypipe.step import Step, PipelineContext, pipestep
+from tinypipe.step import Step, pipestep
+from tinypipe.models import PipelineContext
 from tinypipe.enums import PipelineSignal
 
 
 @pipestep(name="signal_setter")
 def signal_setter(ctx: PipelineContext) -> PipelineContext:
+    # Record which step ran
     ctx.seq = getattr(ctx, "seq", []) + [getattr(ctx, "setter_name", "signal_setter")]
+    # Only trigger once unless caller changes the flag
     if not getattr(ctx, "has_triggered", False):
         signal = getattr(ctx, "set_signal", PipelineSignal.CONTINUE)
-        method_name = signal.name.lower()
-        if method_name == "continue":
-            method_name = "continue_"
-        getattr(ctx, method_name)()
+        if signal is PipelineSignal.ABORT_PASS:
+            ctx.abort_pass()
+        elif signal is PipelineSignal.ABORT_PIPELINE:
+            ctx.abort_pipeline()
+        # CONTINUE => do nothing
         ctx.has_triggered = True
     return ctx
 
@@ -33,8 +37,9 @@ def calibrate(ctx: PipelineContext) -> PipelineContext:
 @pipestep(name="validate", fingerprint_keys=("calibrated",))
 def validate(ctx: PipelineContext) -> PipelineContext:
     ctx.attempt = getattr(ctx, "attempt", 0) + 1
+    # If any negative values exist, ask for another pass (abort current pass)
     if any(x < 0 for x in ctx.calibrated) and ctx.attempt < 2:
-        ctx.start_another_pass()
+        ctx.abort_pass()
     return ctx
 
 
@@ -61,24 +66,18 @@ class TestPipeline:
         assert "▶️  my_pipe pass" in caplog.text
         assert "✅  my_pipe finished after 1 pass(es)" in caplog.text
 
-    def test_start_another_pass(self):
+    def test_abort_pass_triggers_rerun(self):
         steps = [signal_setter, record]
         ctx = PipelineContext(
             seq=[],
-            set_signal=PipelineSignal.START_ANOTHER_PASS,
+            set_signal=PipelineSignal.ABORT_PASS,
             setter_name="signal",
             record_name="record",
         )
         Pipeline(steps, max_passes=3).run(ctx)
-        assert ctx.seq == ["signal", "record", "signal", "record"]
-
-    def test_skip_rest_of_pass(self):
-        steps = [signal_setter, record]
-        ctx = PipelineContext(
-            seq=[], set_signal=PipelineSignal.SKIP_REST_OF_PASS, setter_name="skip"
-        )
-        Pipeline(steps).run(ctx)
-        assert ctx.seq == ["skip"]
+        # First pass: signal_setter runs & aborts pass -> no record
+        # Second pass: signal_setter (has_triggered=True) then record
+        assert ctx.seq == ["signal", "signal", "record"]
 
     def test_abort_pipeline(self):
         steps = [signal_setter, record]
@@ -88,36 +87,11 @@ class TestPipeline:
         Pipeline(steps).run(ctx)
         assert ctx.seq == ["abort"]
 
-    def test_start_another_pass_with_skip(self):
-        steps = [signal_setter, signal_setter, record]
-        ctx = PipelineContext(
-            seq=[], set_signal=PipelineSignal.SKIP_REST_OF_PASS, setter_name="skip"
-        )
-        Pipeline(steps, max_passes=3).run(ctx)
-        assert ctx.seq == ["skip"]
-
-        ctx = PipelineContext(
-            seq=[],
-            set_signal=PipelineSignal.START_ANOTHER_PASS,
-            setter_name="signal1",
-            record_name="record",
-        )
-        Pipeline(steps, max_passes=3).run(ctx)
-        assert ctx.seq == [
-            "signal1",
-            "signal1",
-            "record",
-            "signal1",
-            "signal1",
-            "record",
-        ]
-
     def test_max_passes_exceeded(self):
         @pipestep(name="persistent_retry")
         def persistent_retry(ctx: PipelineContext) -> PipelineContext:
             ctx.seq = getattr(ctx, "seq", []) + ["retry"]
-            method_name = "start_another_pass"
-            getattr(ctx, method_name)()
+            ctx.abort_pass()
             return ctx
 
         steps = [persistent_retry]
@@ -145,7 +119,8 @@ class TestPipeline:
         ctx = PipelineContext()
         pipeline.run(ctx)
         assert ctx.calibrated == [0.15, 0.3, 0.45]
-        assert ctx.attempt == 2  # Incremented in load_assay and validate
+        # load_assay increments attempt; validate increments once
+        assert ctx.attempt == 2
         assert ctx.step_meta["process"]["status"] == "ok"
         assert ctx.step_meta["load_assay"]["status"] == "ok"
         assert ctx.step_meta["calibrate"]["status"] == "ok"

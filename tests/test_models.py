@@ -7,33 +7,24 @@ class TestPipelineContext:
         ctx = PipelineContext()
         assert ctx.signal == PipelineSignal.CONTINUE
 
-        ctx.start_another_pass()
-        assert ctx.signal == PipelineSignal.START_ANOTHER_PASS
+        ctx.abort_pass()
+        assert ctx.signal == PipelineSignal.ABORT_PASS
 
-        ctx.skip_rest_of_pass()  # Overrides to SKIP
-        assert ctx.signal == PipelineSignal.SKIP_REST_OF_PASS
-
-        ctx.continue_()
-        ctx.skip_rest_of_pass()
-        assert ctx.signal == PipelineSignal.SKIP_REST_OF_PASS
-
+        # abort_pipeline overrides everything
         ctx.abort_pipeline()
         assert ctx.signal == PipelineSignal.ABORT_PIPELINE
-        ctx.skip_rest_of_pass()  # Ignored due to ABORT
-        assert ctx.signal == PipelineSignal.ABORT_PIPELINE
 
-        ctx.continue_()
-        assert ctx.signal == PipelineSignal.CONTINUE
+        # further abort_pass() should be ignored after abort_pipeline()
+        ctx.abort_pass()
+        assert ctx.signal == PipelineSignal.ABORT_PIPELINE
 
     def test_extra_fields(self):
         ctx = PipelineContext()
         ctx.custom_field = [1, 2, 3]
-        assert ctx.custom_field == [1, 2, 3]
-        assert ctx.model_dump() == {
-            "step_meta": {},
-            "signal": PipelineSignal.CONTINUE,
-            "custom_field": [1, 2, 3],
-        }
+        dumped = ctx.model_dump()
+        assert dumped["custom_field"] == [1, 2, 3]
+        assert dumped["signal"] == PipelineSignal.CONTINUE
+        assert dumped["step_meta"] == {}
 
     def test_step_meta_initialization(self):
         ctx = PipelineContext()

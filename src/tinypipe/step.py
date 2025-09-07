@@ -44,9 +44,8 @@ class Step(ABC):
                 for child in self.children:
                     ctx = child.run(ctx, depth + 1)
                     if ctx.signal in (
-                        PipelineSignal.SKIP_REST_OF_PASS,
+                        PipelineSignal.ABORT_PASS,
                         PipelineSignal.ABORT_PIPELINE,
-                        PipelineSignal.START_ANOTHER_PASS,
                     ):
                         break
             else:
@@ -84,7 +83,6 @@ def pipestep(name: str, fingerprint_keys: Optional[Iterable[str]] = None) -> Cal
             def logic(self, ctx: PipelineContext) -> PipelineContext:
                 return func(ctx)
 
-        DecoratedStep.__name__ = f"Step_{name}"
         return DecoratedStep()
 
     return decorator
