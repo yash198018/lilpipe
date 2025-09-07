@@ -24,7 +24,7 @@ def calibrate(ctx: PipelineContext) -> PipelineContext:
 
 @pipestep(name="validate", fingerprint_keys=("calibrated",))
 def validate(ctx: PipelineContext) -> PipelineContext:
-    # if any value negative, request another pass (in your simplified flow, that's abort_pass)
+    # if any value negative, request another pass
     if any(x < 0 for x in ctx.calibrated):
         ctx.abort_pass()
     return ctx
