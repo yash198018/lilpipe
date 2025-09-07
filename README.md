@@ -4,7 +4,7 @@ A tiny, typed, sequential pipeline engine for Python.
 
 [![PyPI](https://img.shields.io/pypi/v/lilpipe.svg)](https://pypi.org/project/lilpipe/)
 [![Python Version](https://img.shields.io/pypi/pyversions/lilpipe.svg)](https://pypi.org/project/lilpipe/)
-[![Tests](https://github.com/andrewruba/lilpipe/actions/workflows/ci.yaml/badge.svg)](https://github.com/andrewruba/lilpipe/actions)
+[![CI](https://github.com/andrewruba/lilpipe/actions/workflows/ci.yaml/badge.svg)](https://github.com/andrewruba/lilpipe/actions)
 [![Coverage](https://codecov.io/gh/andrewruba/lilpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/andrewruba/lilpipe)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/your-username/lilpipe/blob/main/LICENSE)
 
