@@ -35,14 +35,6 @@ def error_step(ctx: PipelineContext) -> PipelineContext:
     raise ValueError("bang")
 
 
-class NestedStep(Step):
-    def __init__(self, name: str, children: list[Step]):
-        super().__init__(name, children=children)
-
-    def logic(self, ctx: PipelineContext) -> PipelineContext:
-        return ctx  # No-op for parents with children
-
-
 class TestStep:
     @pytest.mark.usefixtures("caplog")
     def test_always_run_no_cache(self, caplog):
@@ -92,7 +84,7 @@ class TestStep:
     @pytest.mark.usefixtures("caplog")
     def test_nested_steps(self, caplog):
         caplog.set_level(logging.INFO)
-        nested = NestedStep("nested", children=[calibrate, validate])
+        nested = Step("nested", children=[calibrate, validate])
         ctx = PipelineContext(data=[1.0, 2.0, 3.0])
         ctx = nested.run(ctx)
         assert ctx.calibrated == [1.5, 3.0, 4.5]
@@ -106,7 +98,7 @@ class TestStep:
     @pytest.mark.usefixtures("caplog")
     def test_nested_caching(self, caplog):
         caplog.set_level(logging.INFO)
-        nested = NestedStep("nested", children=[calibrate, validate])
+        nested = Step("nested", children=[calibrate, validate])
         ctx = PipelineContext(data=[1.0, 2.0, 3.0])
         ctx = nested.run(ctx)
         assert ctx.calibrated == [1.5, 3.0, 4.5]
@@ -128,10 +120,33 @@ class TestStep:
             ctx.abort_pass()
             return ctx
 
-        nested = NestedStep("nested", children=[stopper, validate])
+        nested = Step("nested", children=[stopper, validate])
         ctx = PipelineContext(data=[1.0, 2.0, 3.0])
         ctx = nested.run(ctx)
-        assert "calibrated" not in ctx
+        assert not hasattr(ctx, "calibrated")
         assert ctx.step_meta["stopper"]["status"] == "ok"
         assert "validate" not in ctx.step_meta
         assert "▶️  stopper" in caplog.text
+
+    @pytest.mark.usefixtures("caplog")
+    def test_noop_logic_runs_and_does_not_change_context(self, caplog):
+        caplog.set_level(logging.INFO)
+        # Instantiate Step with no children and no override -> will hit default no-op logic
+        noop = Step("noop")
+        ctx = PipelineContext(foo=123)
+
+        ctx = noop.run(ctx)
+
+        # Context is unchanged
+        assert ctx.foo == 123
+
+        # Metadata is recorded
+        meta = ctx.step_meta["noop"]
+        assert meta["status"] == "ok"
+        assert meta["duration"] >= 0
+        # Since no fingerprint keys were provided
+        assert meta["input_hash"] is None
+
+        # Log output includes both start and finish markers
+        assert "▶️  noop" in caplog.text
+        assert "✅ noop" in caplog.text

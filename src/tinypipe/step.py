@@ -1,5 +1,4 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
 from typing import Iterable, Optional, Callable
 import time
 import logging
@@ -10,8 +9,15 @@ from .models import PipelineContext
 log = logging.getLogger(__name__)
 
 
-class Step(ABC):
-    """Base class for pipeline steps, supporting both logic and nested children."""
+class Step:
+    """
+    Base class for pipeline steps.
+
+    - If you provide `children`, this acts as a *group* node that simply runs its children in order.
+    - If you override `logic()`, it acts as a leaf step.
+    - If both are present, `children` are run and then `logic()` is executed only if `children` is None.
+      (i.e., group nodes don’t call `logic()`).
+    """
 
     name: str = "<unnamed>"
     fingerprint_keys: Iterable[str] | None = None
@@ -67,8 +73,9 @@ class Step(ABC):
         payload = {k: getattr(ctx, k, None) for k in self.fingerprint_keys}
         return _deep_hash(payload)
 
-    @abstractmethod
-    def logic(self, ctx: PipelineContext) -> PipelineContext: ...
+    def logic(self, ctx: PipelineContext) -> PipelineContext:
+        """Default no-op logic, can be overridden."""
+        return ctx
 
 
 def pipestep(name: str, fingerprint_keys: Optional[Iterable[str]] = None) -> Callable:

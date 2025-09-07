@@ -50,11 +50,6 @@ def load_assay(ctx: PipelineContext) -> PipelineContext:
     return ctx
 
 
-class NestedStep(Step):
-    def logic(self, ctx: PipelineContext) -> PipelineContext:
-        return ctx
-
-
 class TestPipeline:
     @pytest.mark.usefixtures("caplog")
     def test_sequence_order(self, caplog):
@@ -103,7 +98,7 @@ class TestPipeline:
     @pytest.mark.usefixtures("caplog")
     def test_nested_steps(self, caplog):
         caplog.set_level(logging.INFO)
-        nested = NestedStep("nested", children=[calibrate, validate])
+        nested = Step("nested", children=[calibrate, validate])
         pipeline = Pipeline([nested], name="nested_pipe")
         ctx = PipelineContext(data=[1.0, 2.0, 3.0])
         pipeline.run(ctx)
@@ -114,7 +109,7 @@ class TestPipeline:
         assert ctx.step_meta["nested"]["status"] == "ok"
 
     def test_lba_workflow(self):
-        process = NestedStep("process", children=[load_assay, calibrate, validate])
+        process = Step("process", children=[load_assay, calibrate, validate])
         pipeline = Pipeline([process], name="lba_pipe", max_passes=3)
         ctx = PipelineContext()
         pipeline.run(ctx)
