@@ -43,11 +43,11 @@ jobs:
           poetry run pytest -q --cov=lilpipe --cov-report=term-missing --cov-report=xml
 
       # Upload coverage to Codecov
-      # - name: Upload coverage reports to Codecov
-      #   uses: codecov/codecov-action@v5
-      #   with:
-      #     token: ${{ secrets.CODECOV_TOKEN }}
-      #     files: ./coverage.xml
-      #     flags: unittests
-      #     fail_ci_if_error: true
-      #     verbose: true
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          flags: unittests
+          fail_ci_if_error: true
+          verbose: true
