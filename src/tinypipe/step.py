@@ -46,6 +46,7 @@ class Step(ABC):
                     if ctx.signal in (
                         PipelineSignal.SKIP_REST_OF_PASS,
                         PipelineSignal.ABORT_PIPELINE,
+                        PipelineSignal.START_ANOTHER_PASS,
                     ):
                         break
             else:

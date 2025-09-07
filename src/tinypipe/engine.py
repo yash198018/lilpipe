@@ -1,7 +1,8 @@
 from __future__ import annotations
 import logging
 from typing import Sequence
-from .step import Step, PipelineContext
+from .step import Step
+from .models import PipelineContext
 from .enums import PipelineSignal
 
 log = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ class Pipeline:
             if ctx.signal in (
                 PipelineSignal.ABORT_PIPELINE,
                 PipelineSignal.SKIP_REST_OF_PASS,
+                PipelineSignal.START_ANOTHER_PASS,
             ):
                 break
 
