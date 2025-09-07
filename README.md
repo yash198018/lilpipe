@@ -5,7 +5,7 @@ A tiny, typed, sequential pipeline engine for Python.
 [![PyPI](https://img.shields.io/pypi/v/lilpipe.svg)](https://pypi.org/project/lilpipe/)
 [![Python Version](https://img.shields.io/pypi/pyversions/lilpipe.svg)](https://pypi.org/project/lilpipe/)
 [![Tests](https://github.com/your-username/lilpipe/actions/workflows/tests.yml/badge.svg)](https://github.com/your-username/lilpipe/actions)
-[![Coverage](https://codecov.io/gh/your-username/lilpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/your-username/lilpipe)
+[![Coverage](https://codecov.io/gh/andrewruba/lilpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/andrewruba/lilpipe)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/your-username/lilpipe/blob/main/LICENSE)
 
 **lilpipe** is a lightweight, Pydantic-powered library for building and running sequential workflows in Python. Designed for simplicity and type safety, it’s ideal for data processing, scientific workflows (e.g., ligand-binding assays), and any task requiring a clear, linear sequence of steps. With built-in caching, retries, and composable steps, lilpipe offers a minimal yet robust solution for Python developers who want type-safe pipelines without the complexity of graph-based or distributed systems.
