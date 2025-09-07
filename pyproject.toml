@@ -1,5 +1,5 @@
 [project]
-name = "tinypipe"
+name = "lilpipe"
 version = "0.1.0"
 description = "A tiny, typed, sequential pipeline engine for Python"
 authors = [

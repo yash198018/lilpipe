@@ -40,7 +40,7 @@ jobs:
       # Tests + coverage
       - name: Run Pytest w/ coverage
         run: |
-          poetry run pytest -q --cov=tinypipe --cov-report=term-missing --cov-report=xml
+          poetry run pytest -q --cov=lilpipe --cov-report=term-missing --cov-report=xml
 
       # Upload coverage to Codecov
       # - name: Upload coverage reports to Codecov

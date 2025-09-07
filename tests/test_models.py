@@ -1,5 +1,5 @@
-from tinypipe.models import PipelineContext
-from tinypipe.enums import PipelineSignal
+from lilpipe.models import PipelineContext
+from lilpipe.enums import PipelineSignal
 
 
 class TestPipelineContext:

@@ -1,4 +1,4 @@
-from tinypipe.enums import PipelineSignal
+from lilpipe.enums import PipelineSignal
 
 
 class TestPipelineSignal:

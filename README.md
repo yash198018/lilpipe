@@ -1,14 +1,14 @@
-# tinypipe
+# lilpipe
 
 A tiny, typed, sequential pipeline engine for Python.
 
-[![PyPI](https://img.shields.io/pypi/v/tinypipe.svg)](https://pypi.org/project/tinypipe/)
-[![Python Version](https://img.shields.io/pypi/pyversions/tinypipe.svg)](https://pypi.org/project/tinypipe/)
-[![Tests](https://github.com/your-username/tinypipe/actions/workflows/tests.yml/badge.svg)](https://github.com/your-username/tinypipe/actions)
-[![Coverage](https://codecov.io/gh/your-username/tinypipe/branch/main/graph/badge.svg)](https://codecov.io/gh/your-username/tinypipe)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/your-username/tinypipe/blob/main/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/lilpipe.svg)](https://pypi.org/project/lilpipe/)
+[![Python Version](https://img.shields.io/pypi/pyversions/lilpipe.svg)](https://pypi.org/project/lilpipe/)
+[![Tests](https://github.com/your-username/lilpipe/actions/workflows/tests.yml/badge.svg)](https://github.com/your-username/lilpipe/actions)
+[![Coverage](https://codecov.io/gh/your-username/lilpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/your-username/lilpipe)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/your-username/lilpipe/blob/main/LICENSE)
 
-**tinypipe** is a lightweight, Pydantic-powered library for building and running sequential workflows in Python. Designed for simplicity and type safety, it’s ideal for data processing, scientific workflows (e.g., ligand-binding assays), and any task requiring a clear, linear sequence of steps. With built-in caching, retries, and composable steps, tinypipe offers a minimal yet robust solution for Python developers who want type-safe pipelines without the complexity of graph-based or distributed systems.
+**lilpipe** is a lightweight, Pydantic-powered library for building and running sequential workflows in Python. Designed for simplicity and type safety, it’s ideal for data processing, scientific workflows (e.g., ligand-binding assays), and any task requiring a clear, linear sequence of steps. With built-in caching, retries, and composable steps, lilpipe offers a minimal yet robust solution for Python developers who want type-safe pipelines without the complexity of graph-based or distributed systems.
 
 ## Features
 
@@ -23,10 +23,10 @@ A tiny, typed, sequential pipeline engine for Python.
 
 ## Installation
 
-Install tinypipe via pip:
+Install lilpipe via pip:
 
 ```bash
-pip install tinypipe
+pip install lilpipe
 ```
 
 Requires Python 3.13+ and Pydantic 2.11.7+.
@@ -36,7 +36,7 @@ Requires Python 3.13+ and Pydantic 2.11.7+.
 Below is an example showing a pipeline for processing lab data (e.g., LBA) and a generic data-cleaning pipeline, using `Step`, `CompositeStep`, and `PipelineContext`.
 
 ```python
-from tinypipe import Step, CompositeStep, Pipeline, PipelineContext
+from lilpipe import Step, CompositeStep, Pipeline, PipelineContext
 
 # Define steps for a bio-inspired pipeline
 class LoadData(Step):
@@ -85,16 +85,16 @@ print(ctx.output)  # Output: [1, 3]
 
 Try the full example in our [Jupyter notebook](examples/example.ipynb).
 
-## Why tinypipe?
+## Why lilpipe?
 
-tinypipe is designed for users who need simple, sequential pipelines without the overhead of complex workflow libraries. Unlike other tools that focus on directed acyclic graphs (DAGs), parallel execution, or distributed systems, tinypipe prioritizes:
+lilpipe is designed for users who need simple, sequential pipelines without the overhead of complex workflow libraries. Unlike other tools that focus on directed acyclic graphs (DAGs), parallel execution, or distributed systems, lilpipe prioritizes:
 
 - **Simplicity**: Linear workflows with a clear, predictable order.
 - **Type Safety**: Pydantic-based configuration for robust, validated state.
 - **Lightweight Design**: Minimal dependencies and easy setup.
 - **Bio-Friendly**: Tailored for lab workflows (e.g., LBA), but flexible for any sequential task.
 
-Choose tinypipe for type-safe, sequential pipelines in Python-centric projects, especially in data science or bio/lab applications, where graph-based or heavy orchestration tools are unnecessary.
+Choose lilpipe for type-safe, sequential pipelines in Python-centric projects, especially in data science or bio/lab applications, where graph-based or heavy orchestration tools are unnecessary.
 
 ## License
 
@@ -103,4 +103,4 @@ Licensed under the [Apache 2.0 License](LICENSE).
 ## Contact
 
 - Author: Andrew Ruba
-- Issues: [GitHub Issues](https://github.com/andrewruba/tinypipe/issues)
+- Issues: [GitHub Issues](https://github.com/andrewruba/lilpipe/issues)

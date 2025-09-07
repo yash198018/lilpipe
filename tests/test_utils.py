@@ -1,6 +1,6 @@
 import pytest
 from pydantic import BaseModel
-from tinypipe.utils import _deep_hash
+from lilpipe.utils import _deep_hash
 
 
 class PlainModel(BaseModel):

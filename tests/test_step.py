@@ -1,7 +1,7 @@
 import pytest
 import logging
-from tinypipe.step import Step, pipestep
-from tinypipe.models import PipelineContext
+from lilpipe.step import Step, pipestep
+from lilpipe.models import PipelineContext
 
 
 @pipestep(name="always_run")

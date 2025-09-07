@@ -1,9 +1,9 @@
 import pytest
 import logging
-from tinypipe.engine import Pipeline
-from tinypipe.step import Step, pipestep
-from tinypipe.models import PipelineContext
-from tinypipe.enums import PipelineSignal
+from lilpipe.engine import Pipeline
+from lilpipe.step import Step, pipestep
+from lilpipe.models import PipelineContext
+from lilpipe.enums import PipelineSignal
 
 
 @pipestep(name="signal_setter")

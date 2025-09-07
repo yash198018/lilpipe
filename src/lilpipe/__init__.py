@@ -5,7 +5,7 @@ from .enums import PipelineSignal
 from importlib.metadata import version
 
 
-__version__ = version("tinypipe")
+__version__ = version("lilpipe")
 
 __all__ = [
     "__version__",
