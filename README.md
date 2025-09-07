@@ -6,7 +6,8 @@ A tiny, typed, sequential pipeline engine for Python.
 [![Python Version](https://img.shields.io/pypi/pyversions/lilpipe.svg)](https://pypi.org/project/lilpipe/)
 [![CI](https://github.com/andrewruba/lilpipe/actions/workflows/ci.yaml/badge.svg)](https://github.com/andrewruba/lilpipe/actions)
 [![Coverage](https://codecov.io/gh/andrewruba/lilpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/andrewruba/lilpipe)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/your-username/lilpipe/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/andrewruba/lilpipe/blob/main/LICENSE)
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/andrewruba/lilpipe/HEAD?urlpath=%2Fdoc%2Ftree%2Fexamples%2Fexample.ipynb)
 
 **lilpipe** is a lightweight, Pydantic-powered library for building and running sequential workflows in Python. It’s ideal for data processing, scientific workflows, and any task that benefits from a clear, linear sequence of steps. With built-in caching and simple control signals, lilpipe is small, typed, and practical.
 
@@ -29,17 +30,10 @@ pip install lilpipe
 
 ## Example Notebook
 
-The full, runnable demo lives here:
+Run the full demo notebook live on Binder:
+[![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/andrewruba/lilpipe/HEAD?urlpath=%2Fdoc%2Ftree%2Fexamples%2Fexample.ipynb)
 
-* **examples/example.ipynb** (in repo):
-  [https://github.com/andrewruba/lilpipe/blob/HEAD/examples/example.ipynb](https://github.com/andrewruba/lilpipe/blob/HEAD/examples/example.ipynb)
-
-* **nbviewer (rendered view):**
-  [https://nbviewer.org/github/andrewruba/lilpipe/blob/HEAD/examples/example.ipynb](https://nbviewer.org/github/andrewruba/lilpipe/blob/HEAD/examples/example.ipynb)
-
-* **Google Colab (optional):**
-  [https://colab.research.google.com/github/andrewruba/lilpipe/blob/HEAD/examples/example.ipynb](https://colab.research.google.com/github/andrewruba/lilpipe/blob/HEAD/examples/example.ipynb)
-  *Tip: in Colab, add a cell `!pip install lilpipe` before running the notebook.*
+(If you’d rather just view it, the raw notebook is at `examples/example.ipynb` in the repo.)
 
 ## License
 
