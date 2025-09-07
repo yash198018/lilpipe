@@ -1,129 +1,152 @@
-from __future__ import annotations
 import pytest
 import logging
-
 from tinypipe.engine import Pipeline
-from tinypipe.base import Step, PipelineContext
+from tinypipe.step import Step, PipelineContext, pipestep
+from tinypipe.enums import PipelineSignal
 
 
-class Record(Step):
-    """Append own name to ctx.seq so we can inspect execution order."""
-
-    def __init__(self, name: str):
-        self.name = name
-
-    def logic(self, ctx: PipelineContext):
-        ctx.seq.append(self.name)
-        return ctx
-
-
-class FlagSetter(Record):
-    """Same as Record but toggles a Boolean flag on the context."""
-
-    def __init__(self, name: str, flag: str):
-        super().__init__(name)
-        self._flag = flag
-
-    def logic(self, ctx: PipelineContext):
-        super().logic(ctx)
-        setattr(ctx, self._flag, True)
-        return ctx
+@pipestep(name="signal_setter")
+def signal_setter(ctx: PipelineContext) -> PipelineContext:
+    ctx.seq = getattr(ctx, "seq", []) + [getattr(ctx, "setter_name", "signal_setter")]
+    if not getattr(ctx, "has_triggered", False):
+        signal = getattr(ctx, "set_signal", PipelineSignal.CONTINUE)
+        method_name = signal.name.lower()
+        if method_name == "continue":
+            method_name = "continue_"
+        getattr(ctx, method_name)()
+        ctx.has_triggered = True
+    return ctx
 
 
-class OneShotFlagSetter(Record):
-    """Sets ctx.<flag> only the first time it runs."""
+@pipestep(name="record")
+def record(ctx: PipelineContext) -> PipelineContext:
+    ctx.seq = getattr(ctx, "seq", []) + [getattr(ctx, "record_name", "record")]
+    return ctx
 
-    def __init__(self, name: str, flag: str):
-        super().__init__(name)
-        self._flag = flag
-        self._done = False
 
-    def logic(self, ctx: PipelineContext):
-        super().logic(ctx)
-        if not self._done:
-            setattr(ctx, self._flag, True)
-            self._done = True
+@pipestep(name="calibrate", fingerprint_keys=("data",))
+def calibrate(ctx: PipelineContext) -> PipelineContext:
+    ctx.calibrated = [round(x * 1.5, 2) for x in ctx.data]
+    return ctx
+
+
+@pipestep(name="validate", fingerprint_keys=("calibrated",))
+def validate(ctx: PipelineContext) -> PipelineContext:
+    ctx.attempt = getattr(ctx, "attempt", 0) + 1
+    if any(x < 0 for x in ctx.calibrated) and ctx.attempt < 2:
+        ctx.start_another_pass()
+    return ctx
+
+
+@pipestep(name="load_assay")
+def load_assay(ctx: PipelineContext) -> PipelineContext:
+    ctx.attempt = getattr(ctx, "attempt", 0) + 1
+    ctx.data = [0.1, 0.2, 0.3]
+    return ctx
+
+
+class NestedStep(Step):
+    def logic(self, ctx: PipelineContext) -> PipelineContext:
         return ctx
 
 
 class TestPipeline:
     @pytest.mark.usefixtures("caplog")
-    def test_pipeline_sequence_order(self, caplog):
+    def test_sequence_order(self, caplog):
         caplog.set_level(logging.INFO)
-
-        steps = [
-            Record("first"),
-            Record("last"),
-        ]
-        ctx = PipelineContext(seq=[])
-        pipe = Pipeline(steps, name="my_pipe", max_loops=3)
-        pipe.run(ctx)
-
-        assert ctx.seq == ["first", "last"]
-        assert pipe.name == "my_pipe"
+        steps = [signal_setter, record]
+        ctx = PipelineContext(seq=[], setter_name="signal", record_name="record")
+        Pipeline(steps, name="my_pipe").run(ctx)
+        assert ctx.seq == ["signal", "record"]
         assert "▶️  my_pipe pass" in caplog.text
-        assert "✅  my_pipe finished" in caplog.text
+        assert "✅  my_pipe finished after 1 pass(es)" in caplog.text
 
-    def test_needs_rerun_triggers_second_pass(self):
-        steps = [
-            Record("first"),
-            OneShotFlagSetter("redo", "needs_rerun"),
-            Record("last"),
-        ]
-        ctx = PipelineContext(seq=[])
-        Pipeline(steps, max_loops=3).run(ctx)
+    def test_start_another_pass(self):
+        steps = [signal_setter, record]
+        ctx = PipelineContext(
+            seq=[],
+            set_signal=PipelineSignal.START_ANOTHER_PASS,
+            setter_name="signal",
+            record_name="record",
+        )
+        Pipeline(steps, max_passes=3).run(ctx)
+        assert ctx.seq == ["signal", "record", "signal", "record"]
 
-        assert ctx.seq == ["first", "redo", "last", "first", "redo", "last"]
-
-    def test_abort_pass_skips_remaining_steps(self):
-        steps = [
-            FlagSetter("killer", "abort_pass"),
-            Record("should_not_run"),
-        ]
-        ctx = PipelineContext(seq=[])
+    def test_skip_rest_of_pass(self):
+        steps = [signal_setter, record]
+        ctx = PipelineContext(
+            seq=[], set_signal=PipelineSignal.SKIP_REST_OF_PASS, setter_name="skip"
+        )
         Pipeline(steps).run(ctx)
+        assert ctx.seq == ["skip"]
 
-        assert ctx.seq == ["killer"]
-
-    def test_abort_pass_allows_rerun_but_skips_rest_of_pass(self):
-        steps = [
-            OneShotFlagSetter("redo", "needs_rerun"),
-            FlagSetter("stop_now", "abort_pass"),
-            Record("never_seen"),
-        ]
-        ctx = PipelineContext(seq=[])
-        Pipeline(steps, max_loops=5).run(ctx)
-
-        assert ctx.seq == ["redo", "stop_now", "redo", "stop_now"]
-
-    def test_abort_run_terminates_pipeline(self):
-        steps = [
-            FlagSetter("panic", "abort_run"),
-            Record("never_reached"),
-        ]
-        ctx = PipelineContext(seq=[])
+    def test_abort_pipeline(self):
+        steps = [signal_setter, record]
+        ctx = PipelineContext(
+            seq=[], set_signal=PipelineSignal.ABORT_PIPELINE, setter_name="abort"
+        )
         Pipeline(steps).run(ctx)
+        assert ctx.seq == ["abort"]
 
-        assert ctx.seq == ["panic"]
+    def test_start_another_pass_with_skip(self):
+        steps = [signal_setter, signal_setter, record]
+        ctx = PipelineContext(
+            seq=[], set_signal=PipelineSignal.SKIP_REST_OF_PASS, setter_name="skip"
+        )
+        Pipeline(steps, max_passes=3).run(ctx)
+        assert ctx.seq == ["skip"]
 
-    def test_abort_run_cancels_rerun_completely(self):
-        steps = [
-            OneShotFlagSetter("redo", "needs_rerun"),
-            FlagSetter("panic", "abort_run"),
-            Record("never_reached"),
+        ctx = PipelineContext(
+            seq=[],
+            set_signal=PipelineSignal.START_ANOTHER_PASS,
+            setter_name="signal1",
+            record_name="record",
+        )
+        Pipeline(steps, max_passes=3).run(ctx)
+        assert ctx.seq == [
+            "signal1",
+            "signal1",
+            "record",
+            "signal1",
+            "signal1",
+            "record",
         ]
+
+    def test_max_passes_exceeded(self):
+        @pipestep(name="persistent_retry")
+        def persistent_retry(ctx: PipelineContext) -> PipelineContext:
+            ctx.seq = getattr(ctx, "seq", []) + ["retry"]
+            method_name = "start_another_pass"
+            getattr(ctx, method_name)()
+            return ctx
+
+        steps = [persistent_retry]
         ctx = PipelineContext(seq=[])
-        Pipeline(steps, max_loops=5).run(ctx)
-
-        assert ctx.seq == ["redo", "panic"]
-
-    def test_exceeding_max_loops_raises(self):
-        steps = [
-            Record("first"),
-            FlagSetter("redo", "needs_rerun"),
-            Record("last"),
-        ]
-        ctx = PipelineContext(seq=[])
-
         with pytest.raises(RuntimeError, match="exceeded 3 passes"):
-            Pipeline(steps, max_loops=3).run(ctx)
+            Pipeline(steps, max_passes=3).run(ctx)
+        assert len(ctx.seq) == 3
+
+    @pytest.mark.usefixtures("caplog")
+    def test_nested_steps(self, caplog):
+        caplog.set_level(logging.INFO)
+        nested = NestedStep("nested", children=[calibrate, validate])
+        pipeline = Pipeline([nested], name="nested_pipe")
+        ctx = PipelineContext(data=[1.0, 2.0, 3.0])
+        pipeline.run(ctx)
+        assert ctx.calibrated == [1.5, 3.0, 4.5]
+        assert ctx.attempt == 1
+        assert "▶️  nested" in caplog.text
+        assert "✅ nested" in caplog.text
+        assert ctx.step_meta["nested"]["status"] == "ok"
+
+    def test_lba_workflow(self):
+        process = NestedStep("process", children=[load_assay, calibrate, validate])
+        pipeline = Pipeline([process], name="lba_pipe", max_passes=3)
+        ctx = PipelineContext()
+        pipeline.run(ctx)
+        assert ctx.calibrated == [0.15, 0.3, 0.45]
+        assert ctx.attempt == 2  # Incremented in load_assay and validate
+        assert ctx.step_meta["process"]["status"] == "ok"
+        assert ctx.step_meta["load_assay"]["status"] == "ok"
+        assert ctx.step_meta["calibrate"]["status"] == "ok"
+        assert ctx.step_meta["validate"]["status"] == "ok"

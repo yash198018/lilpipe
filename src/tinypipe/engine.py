@@ -1,57 +1,55 @@
 from __future__ import annotations
 import logging
 from typing import Sequence
-
-from .base import Step, PipelineContext
+from .step import Step, PipelineContext
+from .enums import PipelineSignal
 
 log = logging.getLogger(__name__)
 
 
 class Pipeline:
-    """
-    Holds an ordered list of Step instances and runs them sequentially.
-    """
+    """Holds an ordered list of Step instances and runs them sequentially."""
 
     def __init__(
-        self,
-        steps: Sequence[Step],
-        name: str = "pipeline",
-        max_loops: int = 3,
+        self, steps: Sequence[Step], name: str = "pipeline", max_passes: int = 3
     ):
         self.steps = list(steps)
         self.name = name
-        self.max_loops = max_loops
+        self.max_passes = max_passes
 
     def _once(self, ctx: PipelineContext) -> PipelineContext:
         log.info("▶️  %s pass", self.name)
-        ctx.abort_pass = False
+        ctx.signal = PipelineSignal.CONTINUE
+
         for step in self.steps:
             ctx = step.run(ctx)
-            if ctx.abort_pass or ctx.abort_run:
+            if ctx.signal in (
+                PipelineSignal.ABORT_PIPELINE,
+                PipelineSignal.SKIP_REST_OF_PASS,
+            ):
                 break
+
         return ctx
 
     def run(self, ctx: PipelineContext) -> PipelineContext:
-        loops = 0
-        ctx.abort_run = False
-
+        pass_idx = 0
         while True:
-            ctx.needs_rerun = False
             ctx = self._once(ctx)
+            pass_idx += 1
 
-            loops += 1
-
-            if ctx.abort_run:
-                log.info("🛑  %s aborted after %d pass(es)", self.name, loops)
+            if ctx.signal is PipelineSignal.ABORT_PIPELINE:
+                log.info("🛑  %s aborted after %d pass(es)", self.name, pass_idx)
                 break
 
-            if ctx.needs_rerun:
-                if loops >= self.max_loops:
-                    raise RuntimeError(f"{self.name}: exceeded {self.max_loops} passes")
-                log.info("🔄  Re-running %s (pass %d)", self.name, loops + 1)
+            if ctx.signal is PipelineSignal.START_ANOTHER_PASS:
+                if pass_idx >= self.max_passes:
+                    raise RuntimeError(
+                        f"{self.name}: exceeded {self.max_passes} passes"
+                    )
+                log.info("🔄  Re-running %s (pass %d)", self.name, pass_idx + 1)
                 continue
 
+            log.info("✅  %s finished after %d pass(es)", self.name, pass_idx)
             break
 
-        log.info("✅  %s finished after %d pass(es)", self.name, loops)
         return ctx
